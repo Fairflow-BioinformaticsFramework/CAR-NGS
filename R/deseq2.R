@@ -5,7 +5,7 @@
 #' a filtered gene count matrix, and a venn diagram of significant genes.
 #' $B{container(repbioinfo/rnaseqstar_v2:latest,docker);
 #' command(Rscript /home/Deseq2.R $countmatrix_name $metadata_name $reference_group $organism);
-#' volume($input_dir_path:/scratch)}
+#' volume($input_dir_path:/scratch);id(deseq2);name(DESeq2)}
 #' @param input_dir_path, a character string indicating the path of the directory containing the fastq files and the csv files obtained from the indexing
 #' $B{!;type(file)}
 #' @param countmatrix_name, name of the count matrix file obtained after the genome indexing

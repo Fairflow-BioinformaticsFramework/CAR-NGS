@@ -4,7 +4,7 @@
 #' it returns an output directory inside input_dir_path containing a PCA plot of RNA-Seq samples based on the original data and a PCA plot based on filtered data
 #' $B{container(repbioinfo/rnaseqstar_v2:latest,docker);
 #' command(Rscript /home/pca.R $countmatrix_name $metadata_name);
-#' volume($input_dir_path:/scratch}
+#' volume($input_dir_path:/scratch);id(pca);name(PCA)}
 #' @param input_dir_path a character string indicating the path of the directory containing the fastq files and the csv files obtained from the indexing
 #' $B{!;type(file)}
 #' @param countmatrix_name name of the count matrix file obtained after the genome indexing

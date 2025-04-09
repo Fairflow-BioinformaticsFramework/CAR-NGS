@@ -6,7 +6,7 @@
 #' command(/home/detectSeq.sh $threshold $adapt1 $adapt2);
 #' volume($genome_dir_path:/genome);
 #' volume($output_dir_path:/scratch);
-#' volume($fastq_dir_path:/scratch/raw.fastq:ro)}
+#' volume($fastq_dir_path:/scratch/raw.fastq:ro);id(detectseq);name(DetectSeq)}
 #' @param genome_dir_path a character string indicating the path of the directory containing the genome fasta file and, if already obtained, the genome index
 #' $B{!;type(file)}
 #' @param output_dir_path a character string indicating the path of the directory in which the outputs will be saved

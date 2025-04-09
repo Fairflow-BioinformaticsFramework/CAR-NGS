@@ -5,7 +5,7 @@
 #' 2 UMAP plots (colored by cluster and stability scores) and a filtered matrix.
 #' $B{container(repbioinfo/singlecelldownstream:latest,docker);
 #' command(Rscript /home/clustering.R $/scratch/matrix_file $bootstrap_percentage $stability_threshold $permutations $separator $/scratch/genes_file $/scratch/barcodes_file $resolution);
-#' volume($parent_folder:/scratch)}
+#' volume($parent_folder:/scratch);id(clustering);name(Clustering and Stability Analysis Script)}
 #' @param input_file_path a character string indicating the path of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
 #' $B{!;type(file)}
 #' @param bootstrap_percentage percentage of cells to remove in each bootstrap iteration

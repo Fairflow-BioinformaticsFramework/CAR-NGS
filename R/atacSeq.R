@@ -1,4 +1,3 @@
-
 #' Atac-seq
 #'
 #' @description This function is used to do a Assay for Transposase-Accessible Chromatin with high-throughput sequencing analysis,
@@ -9,8 +8,7 @@
 #' $B{container(repbioinfo/atacseq:latest,docker);
 #' command(/home/script.sh $nThreads);
 #' volume($input_dir_path:/scratch);
-#' volume($genome_dir_path:/genomes);
-#' }
+#' volume($genome_dir_path:/genomes);id(Atac-seq);name(Atac-seq)}
 #' @param input_dir_path a character string indicating the path of a directory containing the fastq files to be analyzed
 #' $B{!;type(file)}
 #' @param genome_dir_path a character string indicating the path of a directory containing the fasta files of the genome to be analyzed

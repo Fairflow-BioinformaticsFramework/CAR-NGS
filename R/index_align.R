@@ -6,7 +6,7 @@
 #' $B{container(repbioinfo/rnaseqstar_v2:latest,docker);
 #' command(/home/index_align.sh);
 #' volume($input_dir_path:/scratch);
-#' volume($genome_dir_path:/genome)}
+#' volume($genome_dir_path:/genome);id(index-and-alignment-script);name(Index and Alignment Script)}
 #' @param input_dir_path, a character string indicating the path of a directory containing the fastq files to be analyzed
 #' $B{!;type(file)}
 #' @param genome_dir_path, a character string indicating the path of a directory containing the fasta files of the genome to be analyzed

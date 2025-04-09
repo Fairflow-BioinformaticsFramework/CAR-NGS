@@ -8,7 +8,7 @@
 #' expression as a PNG file.
 #' $B{container(repbioinfo/singlecelldownstream:latest,docker $/scratch/matrix_file);
 #' command(Rscript/home/enrichment_analysis.R $matrix_file $species $source $separator $max_terms $mito_min $mito_max $ribo_min $ribo_max $/scratch/genes_file $/scratch/barcodes_file);
-#' volume($parent_folder:/scratch)}
+#' volume($parent_folder:/scratch);id(mitoribo);name(Mitochondrial and Riboomal Filtering Script)}
 #' @param input_file_path a character string indicating the path of the count
 #' matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
 #' $B{!;type(file)}

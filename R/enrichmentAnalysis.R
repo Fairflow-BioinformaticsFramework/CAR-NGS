@@ -4,7 +4,7 @@
 #' pathway enrichment analysis.
 #' $B{container(repbioinfo/singlecelldownstream:latest,docker);
 #' command(Rscript/home/enrichment_analysis.R $matrix_file $species $source $separator $max_terms);
-#' volume($parent_folder:/scratch)}
+#' volume($parent_folder:/scratch);id(enrichment-analysis-script);name(Enrichment Analysis Script)}
 #' It returns a output directory inside parent_folder containing a PDF file
 #' containing a bar plot of the enriched terms.
 #' @param input_file_path a character string indicating the path of a CSV file containing the results of differential expression analysis.

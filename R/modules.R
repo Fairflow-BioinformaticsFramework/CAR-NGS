@@ -9,7 +9,7 @@
 #' The results are saved in the specified output directory.
 #' $B{container(repbioinfo/rnaseqbulkdownstreamunbias:latest,docker);
 #' command(Rscript /home/modules.R $organism $count_matrix $metadata_file $count_sep $meta_sep);
-#' volume($input_dir_path:/scratch)}
+#' volume($input_dir_path:/scratch);id(modules);name(Modules)}
 #' @param input_dir_path A character string specifying the path to the
 #' directory containing input files (count matrix and metadata).
 #' $B{!;type(file)}

@@ -8,8 +8,7 @@
 #' container(repbioinfo/carncellranger2:latest,docker);
 #' command(/home/index_align.sh $bamsave);
 #' volume($input_dir_path:/scratch);
-#' volume($genome_dir_path:/genome)
-#' }
+#' volume($genome_dir_path:/genome);id(alignindex);name(Index and Alignment Script for single cell analysis)}
 #'
 #' @param input_dir_path a character string indicating the path of a directory
 #' containing the fastq files to be analyzed

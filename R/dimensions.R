@@ -1,11 +1,11 @@
-#' Cells count table size.
+#' Cells count table size
 #'
 #' @description Counts row and columns of a counts table, and provides a dimensions.txt
 #' file inside result_dir_path.
 #' $B{container(docker.io/repbioinfo/r332.2017.01:latest,docker $matrix_name $format "$separator");
 #' command(Rscript /home/main.R);
 #' volume($result_dir_path:/data);
-#' volume($parent_folder:/scratch)}
+#' volume($parent_folder:/scratch);id(cells-count-table-size);name(Cells count table size)}
 #' @param result_dir_path The path where to save the result file.
 #' $B{!;type(file)}
 #' @param input_file_path The path of the input file.

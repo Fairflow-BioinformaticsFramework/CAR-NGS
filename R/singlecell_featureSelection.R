@@ -4,7 +4,7 @@
 #' It returns an output directory inside the parent_folder containing: a CSV file containing DE gene results for each comparison, volcano plots and heatmaps.
 #' $B{container(repbioinfo/singlecelldownstream:latest,docker);
 #' command(Rscript /home/featureSelection.R $matrix_file $clustering_file $threshold $log2fc $pvalue $separator $genes_file $barcodes_file $heatmap);
-#' volume($parent_folder:/scratch)}
+#' volume($parent_folder:/scratch);id(featureselectionscript);name(Feature Selection Script)}
 #' @param input_file_path a character string indicating the path of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
 #' $B{!;type(file)}
 #' @param clustering_file a character string indicating the name of the CSV file containing the clustering results
@@ -90,7 +90,7 @@ singlecell_featureSelection <- function(input_file_path, clustering_file, thresh
   parent_folder <- dirname(input_file_path)
 
   # Obtain matrix name and file format from input_file_path to create the variable matrix_file
-  input_file_path_parts <- strsplit(basename(input_file_path), "\\.")[[1]]
+][1]
   matrix_name <- input_file_path_parts[1]
   format <- input_file_path_parts[2] # Uses extension as an heuristic.
   matrix_file <- paste0(matrix_name, ".", format)
