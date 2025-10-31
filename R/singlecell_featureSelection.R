@@ -1,122 +1,126 @@
 #' Feature Selection Script
 #'
-#' @description This script is used to identify differentially expressed (DE) genes using various statistical methods like ANOVA, MAST, and edgeR.
-#' It returns an output directory inside the parent_folder containing: a CSV file containing DE gene results for each comparison, volcano plots and heatmaps.
-#' $B{container(repbioinfo/singlecelldownstream:latest,docker);
-#' command(Rscript /home/featureSelection.R $matrix_file $clustering_file $threshold $log2fc $pvalue $separator $genes_file $barcodes_file $heatmap);
-#' volume($parent_folder:/scratch);id(featureselectionscript);name(Feature Selection Script)}
-#' @param input_file_path a character string indicating the path of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
-#' $B{!;type(file)}
-#' @param clustering_file a character string indicating the name of the CSV file containing the clustering results
-#' $B{!;type(file)}
-#' @param threshold the stability threshold for filtering cells based on their stability score
-#' $B{!;type(integer)}
-#' @param log2fc thelog2 fold change threshold for identifying DE genes
-#' $B{!;type(integer)}
+#' @description Feature selection script to identify differentially expressed (DE) genes using various 
+#' statistical methods like ANOVA, MAST, and edgeR
+#' @param matrix_file name of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
+#' @param clustering_file name of the CSV file containing the clustering results
+#' @param parent_folder path of the directory containing the matrix file
+#' @param threshold the stability threshold for filtering cells based on their stability
+#' @param log2fc the log2 fold change threshold for identifying DE genes
 #' @param pvalue the p-value threshold for identifying DE genes
-#' $B{!;type(float)}
 #' @param separator separator used in the count table
-#' $B{!;type(text)}
-#' @param genes_file a character string indicating the name of the genes name files necessary for the analysis of a sparse matrix ("*genes.tsv")
-#' $B{!;type(file)}
-#' @param barcodes_file a character string indicating the name of the barcodes file necessary for the analysis of a sparse matrix ("*barcodes.tsv")
-#' $B{!;type(file)}
+#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv)
+#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv)
 #' @param heatmap option to generate an heatmap
-#' $B{!;type(boolean)}
-#' @author Luca Alessandri, Agata D'Onofrio
+#' @return Results of the operation
 #'
-#' @examples
-#' \dontrun{
-#' # Dense matrix analysis
-#' singlecell_featureSelection(
-#'   input_file_path = "/the/input/file.csv",
-#'   clustering_file = "DENSE_Filtered_clustering_stability.output.csv",
-#'   threshold = 0,
-#'   log2fc = 1,
-#'   pvalue = 0.05,
-#'   separator = ","
-#' )
-#'
-#' # Dense matrix analysis
-#' singlecell_featureSelection(
-#'   input_file_path = "/the/input/file.mtx",
-#'   clustering_file = "combined_filtered_matrix_with_sample_clustering_stability.output.csv",
-#'   threshold = 0,
-#'   log2fc = 1,
-#'   pvalue = 0.05,
-#'   genes_file = "combined_filtered_with_sample_genes.tsv",
-#'   barcodes_file = "combined_filtered_with_sample_barcodes.tsv"
-#' )
-#' }
 #' @export
-singlecell_featureSelection <- function(input_file_path, clustering_file, threshold, log2fc, pvalue, separator = NULL, genes_file = NULL, barcodes_file = NULL, heatmap = FALSE) {
-  # Type checking.
-  if (typeof(input_file_path) != "character") {
-    stop(paste("input_file_path type is", paste0(typeof(input_file_path), "."), "It should be \"character\""))
+singlecell_featureSelection <- function(matrix_file,
+clustering_file,
+parent_folder,
+threshold,
+log2fc,
+pvalue,
+separator,
+genes_file,
+barcodes_file,
+heatmap) {
+  # Type validation
+  if (!is.character(matrix_file) || length(matrix_file) != 1) {
+    stop("matrix_file must be a single character string")
   }
-  if (typeof(clustering_file) != "character") {
-    stop(paste("clustering_file type is", paste0(typeof(clustering_file), "."), "It should be \"character\""))
+  if (!is.character(clustering_file) || length(clustering_file) != 1) {
+    stop("clustering_file must be a single character string")
   }
-  if (!is.numeric(threshold)) {
-    stop(paste("threshold type is", paste0(typeof(threshold), "."), "It should be \"double\" or \"integer\""))
+  if (!is.character(parent_folder) || length(parent_folder) != 1) {
+    stop("parent_folder must be a single character string")
   }
-  if (!is.numeric(log2fc)) {
-    stop(paste("log2fc type is", paste0(typeof(log2fc), "."), "It should be \"double\" or \"integer\""))
+  if (!is.numeric(threshold) || length(threshold) != 1 || threshold != round(threshold)) {
+    stop("threshold must be a single integer value")
   }
-  if (!is.numeric(pvalue)) {
-    stop(paste("pvalue type is", paste0(typeof(pvalue), "."), "It should be \"double\" or \"integer\""))
+  if (!is.numeric(log2fc) || length(log2fc) != 1 || log2fc != round(log2fc)) {
+    stop("log2fc must be a single integer value")
   }
-  if (!is.null(separator) && typeof(separator) != "character") {
-    stop(paste("separator type is", paste0(typeof(separator), "."), "It should be \"character\""))
+  if (!is.numeric(pvalue) || length(pvalue) != 1) {
+    stop("pvalue must be a single numeric value")
   }
-  if (!is.null(genes_file) && typeof(genes_file) != "character") {
-    stop(paste("genes_file type is", paste0(typeof(genes_file), "."), "It should be \"character\""))
+  if (!is.character(separator) || length(separator) != 1) {
+    stop("separator must be a single character string")
   }
-  if (!is.null(barcodes_file) && typeof(barcodes_file) != "character") {
-    stop(paste("barcodes_file type is", paste0(typeof(barcodes_file), "."), "It should be \"character\""))
+  if (!is.character(genes_file) || length(genes_file) != 1) {
+    stop("genes_file must be a single character string")
   }
-  if (typeof(heatmap) != "logical") {
-    stop(paste("heatmap type is", paste0(typeof(heatmap), "."), "It should be \"logical\""))
+  if (!is.character(barcodes_file) || length(barcodes_file) != 1) {
+    stop("barcodes_file must be a single character string")
   }
-
-  # Check if the given paths exist
-  if (!is_running_in_docker()) {
-    if (!file.exists(input_file_path)) {
-      stop(paste("input_file_path:", input_file_path, "does not exist."))
+  if (!is.logical(heatmap) || length(heatmap) != 1) {
+    stop("heatmap must be a single logical value (TRUE/FALSE)")
+  }
+  
+  # Security checks
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", matrix_file)) {
+    stop("Path traversal detected in matrix_file")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", clustering_file)) {
+    stop("Path traversal detected in clustering_file")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", parent_folder)) {
+    stop("Path traversal detected in parent_folder")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", separator)) {
+    stop("Path traversal detected in separator")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", genes_file)) {
+    stop("Path traversal detected in genes_file")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", barcodes_file)) {
+    stop("Path traversal detected in barcodes_file")
+  }
+  
+  # Check if directory exists
+  if (!rrundocker::is_running_in_docker()) {
+    if (!dir.exists(parent_folder)) {
+      stop(paste("parent_folder:", parent_folder, "does not exist"))
     }
   }
-
-  # Obtain parent folder from input_file_path.
-  parent_folder <- dirname(input_file_path)
-
-  # Obtain matrix name and file format from input_file_path to create the variable matrix_file
-][1]
-  matrix_name <- input_file_path_parts[1]
-  format <- input_file_path_parts[2] # Uses extension as an heuristic.
-  matrix_file <- paste0(matrix_name, ".", format)
-
-  # Setting the separator as NULL for sparse matrix analysis
-  if (is.null(separator)) {
-    separator <- "NULL"
-  }
-
-  # Executing the docker job
-  rrundocker::run_in_docker(
-    image_name = paste0("repbioinfo/singlecelldownstream:latest"),
-    volumes = list(
-      c(parent_folder, "/scratch")
-    ),
-    additional_arguments = c(
-      "Rscript /home/featureSelection.R",
-      matrix_file,
-      clustering_file,
-      threshold,
-      log2fc,
-      pvalue,
-      separator,
-      genes_file,
-      barcodes_file,
-      if (heatmap) "true" else "false"
+  
+  # Process file paths for Docker volume mounting
+  # Process parent_folder for Docker
+  parent_folder_abspath <- normalizePath(parent_folder, mustWork = FALSE)
+  parent_folder_dir <- dirname(parent_folder_abspath)
+  parent_folder_filename <- basename(parent_folder)
+  
+  # Main volume mount point
+  main_mount_dir <- parent_folder_dir
+  
+  # Execute Docker container with error handling
+  tryCatch({
+    result <- rrundocker::run_in_docker(
+      image_name = "repbioinfo/singlecelldownstream:latest",
+      volumes = list(
+        c(parent_folder_dir, "/scratch"),
+      ),
+      additional_arguments = c(
+        "Rscript /home/featureSelection.R",
+        matrix_file,
+        clustering_file,
+        as.character(threshold),
+        as.character(log2fc),
+        as.character(pvalue),
+        separator,
+        genes_file,
+        barcodes_file,
+        if(heatmap) "--true-flag" else character(0),
+      )
     )
-  )
+    
+    # Process result
+    return(list(
+      status = "success",
+      output_dir = file.path(main_mount_dir, "singlecell_featureSelection_results")
+    ))
+  }, error = function(e) {
+    stop(paste("Docker execution failed:", e$message))
+  })
 }
+
