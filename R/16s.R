@@ -2,7 +2,7 @@
 #'
 #' @description Pipeline for the analysis of 16S rRNA gene sequencing data
 #' @param input_directory Path to input directory containing fastq files
-#' @return Results of the operation
+#' @return aligned_result folder containing result of the operation
 #'
 #' @export
 sixteenS <- function(input_directory) {
@@ -37,11 +37,10 @@ sixteenS <- function(input_directory) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/qiime2023",
       volumes = list(
-        c(input_directory_dir, "/scratch"),
-        c("aligned_results", "/scratch/aligned_results"),
+        c(input_directory_dir, "/scratch")
       ),
       additional_arguments = c(
-        "/home/qiime_full.sh",
+        "/home/qiime_full.sh"
       )
     )
     
@@ -54,3 +53,4 @@ sixteenS <- function(input_directory) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
