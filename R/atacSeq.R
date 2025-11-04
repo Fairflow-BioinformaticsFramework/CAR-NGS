@@ -63,11 +63,11 @@ nThreads) {
       volumes = list(
         c(input_directory_dir, "/scratch"),
         c(genome_directory_dir, "/genomes"),
-        c("results", "/scratch/results"),
+        c("results", "/scratch/results")
       ),
       additional_arguments = c(
         "/home/script.sh",
-        as.character(nThreads),
+        as.character(nThreads)
       )
     )
     
@@ -80,3 +80,4 @@ nThreads) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
