@@ -98,13 +98,13 @@ adapt2) {
       volumes = list(
         c(input_folder_dir, "/scratch/raw.fastq:ro"),
         c(genome_folder_dir, "/genome"),
-        c(output_folder_dir, "/scratch"),
+        c(output_folder_dir, "/scratch")
       ),
       additional_arguments = c(
         "/home/detectSeq.sh",
         as.character(threshold),
         adapt1,
-        adapt2,
+        adapt2
       )
     )
     
@@ -117,3 +117,4 @@ adapt2) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
