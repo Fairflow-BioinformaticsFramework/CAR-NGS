@@ -6,7 +6,8 @@
 #' @param species name of the organism subject of the analysis (allowed values: hsapiens, mmusculus, dmelanogaster)
 #' @param reference_group name of the reference group inside the metadata
 #' @param input_folder path of the directory containing the fastq files and the csv files obtained from the indexing
-#' @return Results of the operation
+#' @return An output directory inside input_dir_path containing CSV files with differential expression results,
+#' named as DEG_<group>_vs_<reference_group>.csv, a filtered gene count matrix, and a venn diagram of significant genes.
 #'
 #' @export
 DESeq2 <- function(matrix_file,
@@ -67,14 +68,14 @@ input_folder) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/rnaseqstar_v2:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch"),
+        c(input_folder_dir, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/Deseq2.R",
         matrix_file,
         metadata_file,
         reference_group,
-        species,
+        species
       )
     )
     
@@ -87,3 +88,4 @@ input_folder) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
