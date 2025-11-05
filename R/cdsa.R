@@ -67,14 +67,14 @@ input_folder) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/rnaseqstar_v2:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch"),
+        c(input_folder_dir, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/CompleteDownStreamAnalysis.R",
         matrix_file,
         metadata_file,
         reference_group,
-        species,
+        species
       )
     )
     
@@ -87,4 +87,5 @@ input_folder) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
