@@ -37,7 +37,7 @@ sixteenS <- function(input_directory) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/qiime2023",
       volumes = list(
-        c(input_directory_dir, "/scratch")
+        c(input_directory, "/scratch")
       ),
       additional_arguments = c(
         "/home/qiime_full.sh"
@@ -53,4 +53,5 @@ sixteenS <- function(input_directory) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
