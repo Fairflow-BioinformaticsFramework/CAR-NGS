@@ -89,16 +89,16 @@ adapt2) {
   output_folder_filename <- basename(output_folder)
   
   # Main volume mount point
-  main_mount_dir <- input_folder_dir
+  main_mount_dir <- input_folder
   
   # Execute Docker container with error handling
   tryCatch({
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/detectseq:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch/raw.fastq:ro"),
-        c(genome_folder_dir, "/genome"),
-        c(output_folder_dir, "/scratch")
+        c(input_folder, "/scratch/raw.fastq:ro"),
+        c(genome_folder, "/genome"),
+        c(output_folder, "/scratch")
       ),
       additional_arguments = c(
         "/home/detectSeq.sh",
@@ -117,4 +117,5 @@ adapt2) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
