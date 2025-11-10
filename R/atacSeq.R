@@ -54,15 +54,15 @@ nThreads) {
   genome_directory_filename <- basename(genome_directory)
   
   # Main volume mount point
-  main_mount_dir <- input_directory_dir
+  main_mount_dir <- input_directory
   
   # Execute Docker container with error handling
   tryCatch({
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/atacseq",
       volumes = list(
-        c(input_directory_dir, "/scratch"),
-        c(genome_directory_dir, "/genomes"),
+        c(input_directory, "/scratch"),
+        c(genome_directory, "/genomes"),
         c("results", "/scratch/results")
       ),
       additional_arguments = c(
@@ -80,4 +80,5 @@ nThreads) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
