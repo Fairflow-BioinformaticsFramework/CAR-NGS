@@ -76,7 +76,7 @@ meta_sep) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/rnaseqbulkdownstreamunbias:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch"),
+        c(input_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/modules.R",
@@ -84,7 +84,7 @@ meta_sep) {
         matrix_file,
         metadata_file,
         matrix_sep,
-        meta_sep,
+        meta_sep
       )
     )
     
@@ -97,3 +97,4 @@ meta_sep) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
