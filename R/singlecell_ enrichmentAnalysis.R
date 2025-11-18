@@ -72,7 +72,7 @@ max_terms) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/singlecelldownstream:latest",
       volumes = list(
-        c(parent_folder_dir, "/scratch"),
+        c(parent_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/enrichment_analysis.R",
@@ -80,7 +80,7 @@ max_terms) {
         species,
         source,
         separator,
-        as.character(max_terms),
+        as.character(max_terms)
       )
     )
     
@@ -93,3 +93,4 @@ max_terms) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
