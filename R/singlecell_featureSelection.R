@@ -8,9 +8,9 @@
 #' @param threshold the stability threshold for filtering cells based on their stability
 #' @param log2fc the log2 fold change threshold for identifying DE genes
 #' @param pvalue the p-value threshold for identifying DE genes
-#' @param separator separator used in the count table
-#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv)
-#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv)
+#' @param separator separator used in the count table, is "null" for sparse matrix analysis 
+#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv), "null" for dense matrix analysis
+#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv), "null" for dense matrix analysis
 #' @param heatmap option to generate an heatmap
 #' @return Results of the operation
 #'
@@ -98,7 +98,7 @@ heatmap) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/singlecelldownstream:latest",
       volumes = list(
-        c(parent_folder_dir, "/scratch"),
+        c(parent_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/featureSelection.R",
@@ -110,7 +110,7 @@ heatmap) {
         separator,
         genes_file,
         barcodes_file,
-        if(heatmap) "--true-flag" else character(0),
+        if(heatmap) "--true-flag" else character(0)
       )
     )
     
@@ -123,4 +123,5 @@ heatmap) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
