@@ -3,7 +3,7 @@
 #' @description Executes the complete downstream bulk RNA-Seq analysis pipeline
 #' @param matrix_file name of the count matrix file obtained after the genome indexing
 #' @param metadata_file name of the metadata file obtained after the genome indexing
-#' @param species name of the organism subject of the analysis (allowed values: hsapiens, mmusculus, dmelanogaster)
+#' @param species name of the organism subject of the analysis (allowed values: Homosapiens, Musmusculus, Drosophilamelanogaster)
 #' @param reference_group name of the reference group inside the metadata
 #' @param input_folder path of the directory containing the fastq files and the csv files obtained from the indexing
 #' @return Results of the operation
@@ -21,7 +21,7 @@ input_folder) {
   if (!is.character(metadata_file) || length(metadata_file) != 1) {
     stop("metadata_file must be a single character string")
   }
-  valid_species <- c("hsapiens", "mmusculus", "dmelanogaster")
+  valid_species <- c("Homosapiens", "Musmusculus", "Drosophilamelanogaster")
   if (!is.character(species) || length(species) != 1 || !(species %in% valid_species)) {
     stop(paste0("species must be one of: ", paste(valid_species, collapse=", ")))
   }
@@ -67,7 +67,7 @@ input_folder) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/rnaseqstar_v2:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch")
+        c(input_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/CompleteDownStreamAnalysis.R",
@@ -87,5 +87,6 @@ input_folder) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
 
