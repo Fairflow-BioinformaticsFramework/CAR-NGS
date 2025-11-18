@@ -1,15 +1,14 @@
-#' Clustering and Stability Analysis Script
+#' singlecell_clustering
 #'
-#' @description This script is used for clustering cells and assessing the stability of the clusters using Seurat and bootstrapping, 
-#' ensuring that the identified clusters are consistent and reliable.
+#' @description Clustering and Stability Analysis Script
 #' @param matrix_file name of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)
 #' @param parent_folder path of the directory containing the matrix file
 #' @param bootstrap_percentage percentage of cells to remove in each bootstrap iteration
 #' @param stability_threshold minimum Jaccard Index value for a cluster to be considered stable
 #' @param permutations number of bootstrap iterations to perform
-#' @param separator separator used in the count table
-#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv)
-#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv)
+#' @param separator separator used in the count table for dense matrix analysis, is "null" for sparse matrix analysis
+#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv), "null" for dense matrix analysis
+#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv), "null" for dense matrix analysis
 #' @param resolution resolution parameter for Seurat clustering
 #' @return Results of the operation
 #'
@@ -90,18 +89,18 @@ resolution) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/singlecelldownstream:latest",
       volumes = list(
-        c(parent_folder_dir, "/scratch"),
+        c(parent_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/clustering.R",
-        "matrixfile_name",
+        matrix_file,
         as.character(bootstrap_percentage),
         as.character(stability_threshold),
         as.character(permutations),
         separator,
-        "genesfile_name",
-        "barcodesfile_name",
-        as.character(resolution),
+        genes_file,
+        barcodes_file,
+        as.character(resolution)
       )
     )
     
@@ -114,3 +113,4 @@ resolution) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
