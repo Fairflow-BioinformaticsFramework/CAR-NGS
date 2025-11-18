@@ -53,12 +53,12 @@ input_folder) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/rnaseqstar_v2:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch"),
+        c(input_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/heatmap.R",
         matrix_file,
-        metadata_file,
+        metadata_file
       )
     )
     
@@ -71,4 +71,5 @@ input_folder) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
 
