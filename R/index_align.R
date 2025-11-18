@@ -54,13 +54,13 @@ genome_folder) {
   # Execute Docker container with error handling
   tryCatch({
     result <- rrundocker::run_in_docker(
-      image_name = "repbioinfo/rnaseqstar_v2:lastest",
+      image_name = "repbioinfo/rnaseqstar_v2:latest",
       volumes = list(
-        c(input_folder_dir, "/scratch"),
-        c(genome_folder_dir, "/genome"),
+        c(input_folder, "/scratch"),
+        c(genome_folder, "/genome")
       ),
       additional_arguments = c(
-        "/home/index_align.sh",
+        "/home/index_align.sh"
       )
     )
     
@@ -73,3 +73,4 @@ genome_folder) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
