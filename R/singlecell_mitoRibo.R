@@ -7,9 +7,9 @@
 #' @param mitoMax end range for mitochondrial percentage, cells within the range are retained
 #' @param riboMin start range for ribosomal percentage, cells within the range are retained
 #' @param riboMax end range for ribosomal percentage, cells within the range are retained
-#' @param separator separator used in the count table
-#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv)
-#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv)
+#' @param separator separator used in the count table, is "null" for sparse matrix analysis
+#' @param genes_file name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv), "null" for dense matrix analysis
+#' @param barcodes_file name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv), "null" for dense matrix analysis
 #' @return Results of the operation
 #'
 #' @export
@@ -89,7 +89,7 @@ barcodes_file) {
     result <- rrundocker::run_in_docker(
       image_name = "repbioinfo/singlecelldownstream:latest",
       volumes = list(
-        c(parent_folder_dir, "/scratch"),
+        c(parent_folder, "/scratch")
       ),
       additional_arguments = c(
         "Rscript /home/mitoRiboFilter.R",
@@ -100,7 +100,7 @@ barcodes_file) {
         as.character(riboMax),
         separator,
         genes_file,
-        barcodes_file,
+        barcodes_file
       )
     )
     
@@ -113,3 +113,4 @@ barcodes_file) {
     stop(paste("Docker execution failed:", e$message))
   })
 }
+
