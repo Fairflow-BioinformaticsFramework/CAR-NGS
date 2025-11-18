@@ -1,56 +1,75 @@
 #' Principal Component Analysis (PCA)
 #'
-#' @description This function performs Principal Component Analysis (PCA) on the gene count matrix to visualize the distribution of samples,
-#' it returns an output directory inside input_dir_path containing a PCA plot of RNA-Seq samples based on the original data and a PCA plot based on filtered data
-#' $B{container(repbioinfo/rnaseqstar_v2:latest,docker);
-#' command(Rscript /home/pca.R $countmatrix_name $metadata_name);
-#' volume($input_dir_path:/scratch);id(pca);name(PCA)}
-#' @param input_dir_path a character string indicating the path of the directory containing the fastq files and the csv files obtained from the indexing
-#' $B{!;type(file)}
-#' @param countmatrix_name name of the count matrix file obtained after the genome indexing
-#' $B{!;type(file)}
-#' @param metadata_name name of the metadata file obtained after the genome indexing
-#' $B{!;type(file)}
-#' @author Luca Alessandri, Agata D'Onofrio, Eliseo Martelli
+#' @description Performs Principal Component Analysis (PCA) on the gene count matrix
+#' @param matrix_file name of the count matrix file obtained after the genome indexing
+#' @param metadata_file name of the metadata file obtained after the genome indexing
+#' @param input_folder path of the directory containing the fastq files and the csv files obtained from the indexing
+#' @return Results of the operation
 #'
-#' @examples
-#' \dontrun{
-#' pca(
-#'   input_dir_path = "/the/input/dir",
-#'   countmatrix_name = "gene_count_matrix.csv",
-#'   metadata_name = "Covariatesstat.csv"
-#' )
-#' }
 #' @export
-pca <- function(input_dir_path, countmatrix_name, metadata_name) {
-  # Type checking.
-  if (typeof(input_dir_path) != "character") {
-    stop(paste("input_dir_path type is", paste0(typeof(input_dir_path), "."), "It should be \"character\""))
+pca <- function(matrix_file,
+metadata_file,
+input_folder) {
+  # Type validation
+  if (!is.character(matrix_file) || length(matrix_file) != 1) {
+    stop("matrix_file must be a single character string")
   }
-  if (typeof(countmatrix_name) != "character") {
-    stop(paste("countmatrix_name type is", paste0(typeof(countmatrix_name), "."), "It should be \"character\""))
+  if (!is.character(metadata_file) || length(metadata_file) != 1) {
+    stop("metadata_file must be a single character string")
   }
-  if (typeof(metadata_name) != "character") {
-    stop(paste("metadata_name type is", paste0(typeof(metadata_name), "."), "It should be \"character\""))
+  if (!is.character(input_folder) || length(input_folder) != 1) {
+    stop("input_folder must be a single character string")
   }
-
-  # Check if input_dir_path exists
+  
+  # Security checks
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", matrix_file)) {
+    stop("Path traversal detected in matrix_file")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", metadata_file)) {
+    stop("Path traversal detected in metadata_file")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", input_folder)) {
+    stop("Path traversal detected in input_folder")
+  }
+  
+  # Check if directory exists
   if (!rrundocker::is_running_in_docker()) {
-    if (!dir.exists(input_dir_path)) {
-      stop(paste("input_dir_path:", input_dir_path, "does not exist."))
+    if (!dir.exists(input_folder)) {
+      stop(paste("input_folder:", input_folder, "does not exist"))
     }
   }
-
-  # Executing the docker job
-  rrundocker::run_in_docker(
-    image_name = paste0("repbioinfo/rnaseqstar_v2:latest"),
-    volumes = list(
-      c(input_dir_path, "/scratch")
-    ),
-    additional_arguments = c(
-      "Rscript /home/pca.R",
-      countmatrix_name,
-      metadata_name
+  
+  # Process file paths for Docker volume mounting
+  # Process input_folder for Docker
+  input_folder_abspath <- normalizePath(input_folder, mustWork = FALSE)
+  input_folder_dir <- dirname(input_folder_abspath)
+  input_folder_filename <- basename(input_folder)
+  
+  # Main volume mount point
+  main_mount_dir <- input_folder_dir
+  
+  # Execute Docker container with error handling
+  tryCatch({
+    result <- rrundocker::run_in_docker(
+      image_name = "repbioinfo/rnaseqstar_v2:latest",
+      volumes = list(
+        c(input_folder, "/scratch")
+      ),
+      additional_arguments = c(
+        "Rscript /home/pca.R",
+        matrix_file,
+        metadata_file
+      )
     )
-  )
+    
+    # Process result
+    return(list(
+      status = "success",
+      output_dir = file.path(main_mount_dir, "pca_results")
+    ))
+  }, error = function(e) {
+    stop(paste("Docker execution failed:", e$message))
+  })
 }
+
+
