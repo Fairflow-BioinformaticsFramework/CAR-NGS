@@ -1,64 +1,84 @@
-#' Atac-seq
+#' atacSeq
 #'
-#' @description This function is used to do a Assay for Transposase-Accessible Chromatin with high-throughput sequencing analysis,
-#' it returns quality control files for each fastq (FastQC reports),
-#' BAM files containing aligned reads in BAM format,
-#' index files (.bai) for each BAM file,
-#' Peak Calling results and BigWig files
-#' $B{container(repbioinfo/atacseq:latest,docker);
-#' command(/home/script.sh $nThreads);
-#' volume($input_dir_path:/scratch);
-#' volume($genome_dir_path:/genomes);id(Atac-seq);name(Atac-seq)}
-#' @param input_dir_path a character string indicating the path of a directory containing the fastq files to be analyzed
-#' $B{!;type(file)}
-#' @param genome_dir_path a character string indicating the path of a directory containing the fasta files of the genome to be analyzed
-#'$B{!;type(file)}
-#' @param nThreads number of cores for parallelization
-#' $B{type(integer);value(8)}
-#' @author Luca Alessandri, Agata D'Onofrio
+#' @description Function to perform Assay for Transposase-Accessible Chromatin with high-throughput sequencing analysis
+#' @param input_directory Path to fastq files directory
+#' @param genome_directory Path to reference genome fasta files directory
+#' @param nThreads Number of cores for parallelization
+#' @return Results of the operation
 #'
-#' @examples
-#' \dontrun{
-#' atacSeq(
-#'   input_dir_path = "/the/input/path",
-#'   genome_dir_path = "/the/genome/path"
-#' )
-#' }
 #' @export
-atacSeq <- function(input_dir_path, genome_dir_path, nThreads = 8) {
-  # Type checking.
-  if (typeof(input_dir_path) != "character") {
-    stop(paste("input_dir_path type is", paste0(typeof(input_dir_path), "."), "It should be \"character\""))
+atacSeq <- function(input_directory,
+genome_directory,
+nThreads) {
+  # Type validation
+  if (!is.character(input_directory) || length(input_directory) != 1) {
+    stop("input_directory must be a single character string")
   }
-  if (typeof(genome_dir_path) != "character") {
-    stop(paste("genome_dir_path type is", paste0(typeof(genome_dir_path), "."), "It should be \"character\""))
+  if (!is.character(genome_directory) || length(genome_directory) != 1) {
+    stop("genome_directory must be a single character string")
   }
-  if (typeof(nThreads) != "double") {
-    stop(paste("nThreads type is", paste0(typeof(nThreads), "."), "It should be \"double\""))
+  if (!is.numeric(nThreads) || length(nThreads) != 1) {
+    stop("nThreads must be a single numeric value")
   }
-
-
-  # Check if input_dir_path exists
+  
+  # Security checks
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", input_directory)) {
+    stop("Path traversal detected in input_directory")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", genome_directory)) {
+    stop("Path traversal detected in genome_directory")
+  }
+  
+  # Check if directory exists
   if (!rrundocker::is_running_in_docker()) {
-    if (!dir.exists(input_dir_path)) {
-      stop(paste("input_dir_path:", input_dir_path, "does not exist."))
-    }
-    if (!dir.exists(genome_dir_path)) {
-      stop(paste("genome_dir_path:", genome_dir_path, "does not exist."))
+    if (!dir.exists(input_directory)) {
+      stop(paste("input_directory:", input_directory, "does not exist"))
     }
   }
-
-  # Executing the docker job
-  rrundocker::run_in_docker(
-    image_name = paste0("repbioinfo/atacseq:latest"),
-    volumes = list(
-      c(input_dir_path, "/scratch"),
-      c(genome_dir_path, "/genomes"),
-      c(paste0(input_dir_path, "/results"), "/scratch/results")
-    ),
-    additional_arguments = c(
-      "/home/script.sh",
-      nThreads
+  
+  # Check if directory exists
+  if (!rrundocker::is_running_in_docker()) {
+    if (!dir.exists(genome_directory)) {
+      stop(paste("genome_directory:", genome_directory, "does not exist"))
+    }
+  }
+  
+  # Process file paths for Docker volume mounting
+  # Process input_directory for Docker
+  input_directory_abspath <- normalizePath(input_directory, mustWork = FALSE)
+  input_directory_dir <- dirname(input_directory_abspath)
+  input_directory_filename <- basename(input_directory)
+  # Process genome_directory for Docker
+  genome_directory_abspath <- normalizePath(genome_directory, mustWork = FALSE)
+  genome_directory_dir <- dirname(genome_directory_abspath)
+  genome_directory_filename <- basename(genome_directory)
+  
+  # Main volume mount point
+  main_mount_dir <- input_directory
+  
+  # Execute Docker container with error handling
+  tryCatch({
+    result <- rrundocker::run_in_docker(
+      image_name = "repbioinfo/atacseq",
+      volumes = list(
+        c(input_directory, "/scratch"),
+        c(genome_directory, "/genomes"),
+        c("results", "/scratch/results")
+      ),
+      additional_arguments = c(
+        "/home/script.sh",
+        as.character(nThreads)
+      )
     )
-  )
+    
+    # Process result
+    return(list(
+      status = "success",
+      output_dir = file.path(main_mount_dir, "atacSeq_results")
+    ))
+  }, error = function(e) {
+    stop(paste("Docker execution failed:", e$message))
+  })
 }
+
+
