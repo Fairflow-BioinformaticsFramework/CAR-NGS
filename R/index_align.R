@@ -1,54 +1,76 @@
-#' Index and Alignment Script
+#' Index and Alignment script
 #'
-#' @description This script performs the alignment of RNA-Seq reads to the reference genome using STAR and generates a gene count matrix.
-#' It returns a output directory containing aligned BAM files, gene_count_matrix.csv (gene count matrix)
-#' and Covariatesstat.csv (metadata file containing sample information)
-#' $B{container(repbioinfo/rnaseqstar_v2:latest,docker);
-#' command(/home/index_align.sh);
-#' volume($input_dir_path:/scratch);
-#' volume($genome_dir_path:/genome);id(index-and-alignment-script);name(Index and Alignment Script)}
-#' @param input_dir_path, a character string indicating the path of a directory containing the fastq files to be analyzed
-#' $B{!;type(file)}
-#' @param genome_dir_path, a character string indicating the path of a directory containing the fasta files of the genome to be analyzed
-#' $B{!;type(file)}
-#' @author Luca Alessandri, Agata D'Onofrio
+#' @description Performs the alignment of RNA-Seq reads to the reference genome using STAR
+#' @param input_folder path of a directory containing the fastq files to be analyzed
+#' @param genome_folder path of a directory containing the fasta files of the genome
+#' @return Results of the operation
 #'
-#' @examples
-#' \dontrun{
-#' index_align(
-#'   input_dir_path = "/the/input/path",
-#'   genome_dir_path = "/the/genome/path"
-#' )
-#' }
 #' @export
-index_align <- function(input_dir_path, genome_dir_path) {
-  # Type checking.
-  if (typeof(input_dir_path) != "character") {
-    stop(paste("input_dir_path type is", paste0(typeof(input_dir_path), "."), "It should be \"character\""))
+index_align <- function(input_folder,
+genome_folder) {
+  # Type validation
+  if (!is.character(input_folder) || length(input_folder) != 1) {
+    stop("input_folder must be a single character string")
   }
-  if (typeof(genome_dir_path) != "character") {
-    stop(paste("genome_dir_path type is", paste0(typeof(genome_dir_path), "."), "It should be \"character\""))
+  if (!is.character(genome_folder) || length(genome_folder) != 1) {
+    stop("genome_folder must be a single character string")
   }
-
-  # Check if the paths in input exist
+  
+  # Security checks
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", input_folder)) {
+    stop("Path traversal detected in input_folder")
+  }
+  if (grepl("\\.\\./|\\.\\\\|\\/\\.\\./|\\\\\\.\\\\\\.\\\\", genome_folder)) {
+    stop("Path traversal detected in genome_folder")
+  }
+  
+  # Check if directory exists
   if (!rrundocker::is_running_in_docker()) {
-    if (!dir.exists(input_dir_path)) {
-      stop(paste("input_dir_path:", input_dir_path, "does not exist."))
-    }
-    if (!dir.exists(genome_dir_path)) {
-      stop(paste("genome_dir_path:", genome_dir_path, "does not exist."))
+    if (!dir.exists(input_folder)) {
+      stop(paste("input_folder:", input_folder, "does not exist"))
     }
   }
-
-  # Executing the docker job
-  rrundocker::run_in_docker(
-    image_name = paste0("repbioinfo/rnaseqstar_v2:latest"),
-    volumes = list(
-      c(input_dir_path, "/scratch"),
-      c(genome_dir_path, "/genome")
-    ),
-    additional_arguments = c(
-      "/home/index_align.sh"
+  
+  # Check if directory exists
+  if (!rrundocker::is_running_in_docker()) {
+    if (!dir.exists(genome_folder)) {
+      stop(paste("genome_folder:", genome_folder, "does not exist"))
+    }
+  }
+  
+  # Process file paths for Docker volume mounting
+  # Process input_folder for Docker
+  input_folder_abspath <- normalizePath(input_folder, mustWork = FALSE)
+  input_folder_dir <- dirname(input_folder_abspath)
+  input_folder_filename <- basename(input_folder)
+  # Process genome_folder for Docker
+  genome_folder_abspath <- normalizePath(genome_folder, mustWork = FALSE)
+  genome_folder_dir <- dirname(genome_folder_abspath)
+  genome_folder_filename <- basename(genome_folder)
+  
+  # Main volume mount point
+  main_mount_dir <- input_folder_dir
+  
+  # Execute Docker container with error handling
+  tryCatch({
+    result <- rrundocker::run_in_docker(
+      image_name = "repbioinfo/rnaseqstar_v2:latest",
+      volumes = list(
+        c(input_folder, "/scratch"),
+        c(genome_folder, "/genome")
+      ),
+      additional_arguments = c(
+        "/home/index_align.sh"
+      )
     )
-  )
+    
+    # Process result
+    return(list(
+      status = "success",
+      output_dir = file.path(main_mount_dir, "index_align_results")
+    ))
+  }, error = function(e) {
+    stop(paste("Docker execution failed:", e$message))
+  })
 }
+
