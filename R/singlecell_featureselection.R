@@ -10,25 +10,26 @@ cat_col <- function(..., color = WHITE) {
   cat(color, ..., RESET, '\n', sep = '')
 }
 
-usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<matrix_file>", RESET), ' ', paste0("\033[92m<bootstrap_percentage>", RESET), ' ', paste0("\033[92m<stability_threshold>", RESET), ' ', paste0("\033[92m<permutations>", RESET), ' ', paste0("\033[92m<separator>", RESET), ' ', paste0("\033[92m<genes_file>", RESET), ' ', paste0("\033[92m<barcodes_file>", RESET), ' ', paste0("\033[92m<resolution>", RESET))
+usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<matrix_file>", RESET), ' ', paste0("\033[92m<clustering_file>", RESET), ' ', paste0("\033[92m<threshold>", RESET), ' ', paste0("\033[92m<log2fc>", RESET), ' ', paste0("\033[92m<pvalue>", RESET), ' ', paste0("\033[92m<separator>", RESET), ' ', paste0("\033[92m<genes_file>", RESET), ' ', paste0("\033[92m<barcodes_file>", RESET), ' ', paste0("\033[92m<heatmap>", RESET))
 
 args_raw <- commandArgs(trailingOnly = TRUE)
 
-if (length(args_raw) != 10) {
-  cat(WHITE, 'Usage: Rscript singlecell_clustering.R ', usage_str, RESET, '\n\n', sep = '')
-  cat_col("Clustering and Stability Analysis Script for single cell analysis", color = YELLOW)
+if (length(args_raw) != 11) {
+  cat(WHITE, 'Usage: Rscript singlecell_featureselection.R ', usage_str, RESET, '\n\n', sep = '')
+  cat_col("Feature selection scipt to identify differentially expressed (DE) genes in single cell analysis", color = YELLOW)
   cat('\n')
   cat_col('Arguments:', color = WHITE)
   cat('\033[93mworkdir         [io]  Path to working directory containing scratch folder', RESET, '\n', sep = '')
   cat('\033[93mscratch         [io]  Path to scratch folder containing the files to be analyzed', RESET, '\n', sep = '')
   cat('\033[92mmatrix_file           name of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)', RESET, '\n', sep = '')
-  cat('\033[92mbootstrap_percentage       percentage of cells to remove in each bootstrap iteration', RESET, '\n', sep = '')
-  cat('\033[92mstability_threshold       minimum Jaccard Index value for a cluster to be considered stable', RESET, '\n', sep = '')
-  cat('\033[92mpermutations          number of bootstrap iterations to perform', RESET, '\n', sep = '')
+  cat('\033[92mclustering_file       name of the CSV file containing the clustering results', RESET, '\n', sep = '')
+  cat('\033[92mthreshold             the stability threshold for filtering cells based on their stability', RESET, '\n', sep = '')
+  cat('\033[92mlog2fc                the log2 fold change threshold for identifying DE genes', RESET, '\n', sep = '')
+  cat('\033[92mpvalue                the p-value threshold for identifying DE genes', RESET, '\n', sep = '')
   cat('\033[92mseparator             separator used in the count table for dense matrix analysis, is \\"NULL\\" for sparse matrix analysis', RESET, '\n', sep = '')
   cat('\033[92mgenes_file            name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv), \\"NULL\\" for dense matrix analysis', RESET, '\n', sep = '')
   cat('\033[92mbarcodes_file         name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv), \\"NULL\\" for dense matrix analysis', RESET, '\n', sep = '')
-  cat('\033[92mresolution            resolution parameter for Seurat clustering', RESET, '\n', sep = '')
+  cat('\033[92mheatmap               option to generate an heatmap', RESET, '\n', sep = '')
   quit(status = 1)
 }
 
@@ -37,13 +38,14 @@ args <- list()
 args$workdir <- args_raw[1]
 args$scratch <- args_raw[2]
 args$matrix_file <- args_raw[3]
-args$bootstrap_percentage <- args_raw[4]
-args$stability_threshold <- args_raw[5]
-args$permutations <- args_raw[6]
-args$separator <- args_raw[7]
-args$genes_file <- args_raw[8]
-args$barcodes_file <- args_raw[9]
-args$resolution <- args_raw[10]
+args$clustering_file <- args_raw[4]
+args$threshold <- args_raw[5]
+args$log2fc <- args_raw[6]
+args$pvalue <- args_raw[7]
+args$separator <- args_raw[8]
+args$genes_file <- args_raw[9]
+args$barcodes_file <- args_raw[10]
+args$heatmap <- args_raw[11]
 
 # --- Input validation ---
 errors <- character(0)
@@ -53,6 +55,9 @@ if (!dir.exists(args$workdir)) {
 }
 if (!dir.exists(args$scratch)) {
   errors <- c(errors, paste0('Directory not found: scratch = ', args$scratch))
+}
+if (!args$heatmap %in% c("TRUE", "FALSE")) {
+  errors <- c(errors, paste0('Invalid value for heatmap: ', args$heatmap, '. Allowed: TRUE, FALSE'))
 }
 
 if (length(errors) > 0) {
@@ -89,17 +94,18 @@ docker_vals$scratch <- '/scratch'
 mounted_folders <- list()
 
 docker_vals$matrix_file <- args$matrix_file
-docker_vals$bootstrap_percentage <- args$bootstrap_percentage
-docker_vals$stability_threshold <- args$stability_threshold
-docker_vals$permutations <- args$permutations
+docker_vals$clustering_file <- args$clustering_file
+docker_vals$threshold <- args$threshold
+docker_vals$log2fc <- args$log2fc
+docker_vals$pvalue <- args$pvalue
 docker_vals$separator <- args$separator
 docker_vals$genes_file <- args$genes_file
 docker_vals$barcodes_file <- args$barcodes_file
-docker_vals$resolution <- args$resolution
+docker_vals$heatmap <- args$heatmap
 
 # --- Assemble docker command ---
 mount_str <- paste(mounts, collapse = ' ')
-cmd <- paste('docker run --rm', mount_str, 'repbioinfo/singlecelldownstream Rscript /home/clustering.R <matrix_file> <bootstrap_percentage> <stability_threshold> <permutations> <separator> <genes_file> <barcodes_file> <resolution>')
+cmd <- paste('docker run --rm', mount_str, 'repbioinfo/singlecelldownstream Rscript /home/featureSelection.R <matrix_file> <clustering_file> <threshold> <log2fc> <pvalue> <separator> <genes_file> <barcodes_file> <heatmap>')
 placeholders <- regmatches(cmd, gregexpr('<[^>]+>', cmd))[[1]]
 for (ph in placeholders) {
   key <- gsub('<|>', '', ph)
