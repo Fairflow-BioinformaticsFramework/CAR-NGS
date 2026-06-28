@@ -10,32 +10,28 @@ cat_col <- function(..., color = WHITE) {
   cat(color, ..., RESET, '\n', sep = '')
 }
 
-usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<matrix_name>", RESET), ' ', paste0("\033[92m<metadata_name>", RESET), ' ', paste0("\033[92m<reference_group>", RESET), ' ', paste0("\033[92m<species>", RESET))
+usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<genome>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<nthreads>", RESET))
 
 args_raw <- commandArgs(trailingOnly = TRUE)
 
-if (length(args_raw) != 6) {
-  cat(WHITE, 'Usage: Rscript cdsa.R ', usage_str, RESET, '\n\n', sep = '')
-  cat_col("Executes the complete downstream bulk RNA-Seq analysis pipeline", color = YELLOW)
+if (length(args_raw) != 4) {
+  cat(WHITE, 'Usage: Rscript atacseq.R ', usage_str, RESET, '\n\n', sep = '')
+  cat_col("Function to perform Assay for Transposase-Accessible Chromatin with high-throughput sequencing analysis", color = YELLOW)
   cat('\n')
   cat_col('Arguments:', color = WHITE)
-  cat('\033[93mworkdir         [io]  Path to working directory containing scratch folder', RESET, '\n', sep = '')
-  cat('\033[93mscratch         [io]  Path to scratch folder containing fastq files to be analyzed', RESET, '\n', sep = '')
-  cat('\033[92mmatrix_name           Name of the count matrix file obtained after the genome indexing', RESET, '\n', sep = '')
-  cat('\033[92mmetadata_name         Name of the metadata file obtained after the genome indexing', RESET, '\n', sep = '')
-  cat('\033[92mreference_group       Name of the reference group inside the metadata', RESET, '\n', sep = '')
-  cat('\033[92mspecies               Name of the organism subject of the analysis', RESET, '\n', sep = '')
+  cat('\033[93mworkdir         [io]  Path to input directory containing scratch folder', RESET, '\n', sep = '')
+  cat('\033[93mgenome          [io]  Path to reference genome fasta files directory', RESET, '\n', sep = '')
+  cat('\033[93mscratch         [io]  Path to scratch folder containing fastq files', RESET, '\n', sep = '')
+  cat('\033[92mnthreads              Number of cores for parallelization', RESET, '\n', sep = '')
   quit(status = 1)
 }
 
 # Parse positional arguments
 args <- list()
 args$workdir <- args_raw[1]
-args$scratch <- args_raw[2]
-args$matrix_name <- args_raw[3]
-args$metadata_name <- args_raw[4]
-args$reference_group <- args_raw[5]
-args$species <- args_raw[6]
+args$genome <- args_raw[2]
+args$scratch <- args_raw[3]
+args$nthreads <- args_raw[4]
 
 # --- Input validation ---
 errors <- character(0)
@@ -43,11 +39,11 @@ errors <- character(0)
 if (!dir.exists(args$workdir)) {
   errors <- c(errors, paste0('Directory not found: workdir = ', args$workdir))
 }
+if (!dir.exists(args$genome)) {
+  errors <- c(errors, paste0('Directory not found: genome = ', args$genome))
+}
 if (!dir.exists(args$scratch)) {
   errors <- c(errors, paste0('Directory not found: scratch = ', args$scratch))
-}
-if (!args$species %in% c("Homosapiens", "Musmusculus", "Drosophilamelanogaster")) {
-  errors <- c(errors, paste0('Invalid value for species: ', args$species, '. Allowed: Homosapiens, Musmusculus, Drosophilamelanogaster'))
 }
 
 if (length(errors) > 0) {
@@ -76,6 +72,10 @@ service_idx <- 1
 mounts <- c(mounts, paste0('-v "', scratch_path, ':/workDir"'))
 docker_vals$workdir <- '/workDir'
 
+# genome: read-write directory [io]
+mounts <- c(mounts, paste0('-v "', normalizePath(args$genome), ':/genomes"'))
+docker_vals$genome <- '/genomes'
+
 # scratch: read-write directory [io]
 mounts <- c(mounts, paste0('-v "', normalizePath(args$scratch), ':/scratch"'))
 docker_vals$scratch <- '/scratch'
@@ -83,14 +83,11 @@ docker_vals$scratch <- '/scratch'
 # --- Bind files and service volumes ---
 mounted_folders <- list()
 
-docker_vals$matrix_name <- args$matrix_name
-docker_vals$metadata_name <- args$metadata_name
-docker_vals$reference_group <- args$reference_group
-docker_vals$species <- args$species
+docker_vals$nthreads <- args$nthreads
 
 # --- Assemble docker command ---
 mount_str <- paste(mounts, collapse = ' ')
-cmd <- paste('docker run --rm', mount_str, 'repbioinfo/rnaseqstar_v2 Rscript /home/CompleteDownStreamAnalysis.R <matrix_name> <metadata_name> <reference_group> <species>')
+cmd <- paste('docker run --rm', mount_str, 'repbioinfo/atacseq /home/script.sh ')
 placeholders <- regmatches(cmd, gregexpr('<[^>]+>', cmd))[[1]]
 for (ph in placeholders) {
   key <- gsub('<|>', '', ph)
