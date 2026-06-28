@@ -10,25 +10,25 @@ cat_col <- function(..., color = WHITE) {
   cat(color, ..., RESET, '\n', sep = '')
 }
 
-usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<matrix_file>", RESET), ' ', paste0("\033[92m<bootstrap_percentage>", RESET), ' ', paste0("\033[92m<stability_threshold>", RESET), ' ', paste0("\033[92m<permutations>", RESET), ' ', paste0("\033[92m<separator>", RESET), ' ', paste0("\033[92m<genes_file>", RESET), ' ', paste0("\033[92m<barcodes_file>", RESET), ' ', paste0("\033[92m<resolution>", RESET))
+usage_str <- paste0(paste0("\033[93m<workdir>", RESET), ' ', paste0("\033[93m<scratch>", RESET), ' ', paste0("\033[92m<matrix_file>", RESET), ' ', paste0("\033[92m<mitomin>", RESET), ' ', paste0("\033[92m<mitomax>", RESET), ' ', paste0("\033[92m<ribomin>", RESET), ' ', paste0("\033[92m<ribomax>", RESET), ' ', paste0("\033[92m<separator>", RESET), ' ', paste0("\033[92m<genes_file>", RESET), ' ', paste0("\033[92m<barcodes_file>", RESET))
 
 args_raw <- commandArgs(trailingOnly = TRUE)
 
 if (length(args_raw) != 10) {
-  cat(WHITE, 'Usage: Rscript singlecell_clustering.R ', usage_str, RESET, '\n\n', sep = '')
-  cat_col("Clustering and Stability Analysis Script for single cell analysis", color = YELLOW)
+  cat(WHITE, 'Usage: Rscript singlecell_mitoribo.R ', usage_str, RESET, '\n\n', sep = '')
+  cat_col("Filtering cells based on their mitochondrial and ribosomal gene content, providing quality control in single-cell RNA-seq experiments", color = YELLOW)
   cat('\n')
   cat_col('Arguments:', color = WHITE)
   cat('\033[93mworkdir         [io]  Path to working directory containing scratch folder', RESET, '\n', sep = '')
   cat('\033[93mscratch         [io]  Path to scratch folder containing the files to be analyzed', RESET, '\n', sep = '')
   cat('\033[92mmatrix_file           name of the count matrix file, which can be both dense (.csv/.txt) or sparse (.mtx)', RESET, '\n', sep = '')
-  cat('\033[92mbootstrap_percentage       percentage of cells to remove in each bootstrap iteration', RESET, '\n', sep = '')
-  cat('\033[92mstability_threshold       minimum Jaccard Index value for a cluster to be considered stable', RESET, '\n', sep = '')
-  cat('\033[92mpermutations          number of bootstrap iterations to perform', RESET, '\n', sep = '')
+  cat('\033[92mmitomin               start range for mitochondrial percentage, cells within the range are retained', RESET, '\n', sep = '')
+  cat('\033[92mmitomax               end range for mitochondrial percentage, cells within the range are retained', RESET, '\n', sep = '')
+  cat('\033[92mribomin               start range for ribosomal percentage, cells within the range are retained', RESET, '\n', sep = '')
+  cat('\033[92mribomax               end range for ribosomal percentage, cells within the range are retained', RESET, '\n', sep = '')
   cat('\033[92mseparator             separator used in the count table for dense matrix analysis, is \\"NULL\\" for sparse matrix analysis', RESET, '\n', sep = '')
   cat('\033[92mgenes_file            name of the genes name files necessary for the analysis of a sparse matrix (*genes.tsv), \\"NULL\\" for dense matrix analysis', RESET, '\n', sep = '')
   cat('\033[92mbarcodes_file         name of the barcodes file necessary for the analysis of a sparse matrix (*barcodes.tsv), \\"NULL\\" for dense matrix analysis', RESET, '\n', sep = '')
-  cat('\033[92mresolution            resolution parameter for Seurat clustering', RESET, '\n', sep = '')
   quit(status = 1)
 }
 
@@ -37,13 +37,13 @@ args <- list()
 args$workdir <- args_raw[1]
 args$scratch <- args_raw[2]
 args$matrix_file <- args_raw[3]
-args$bootstrap_percentage <- args_raw[4]
-args$stability_threshold <- args_raw[5]
-args$permutations <- args_raw[6]
-args$separator <- args_raw[7]
-args$genes_file <- args_raw[8]
-args$barcodes_file <- args_raw[9]
-args$resolution <- args_raw[10]
+args$mitomin <- args_raw[4]
+args$mitomax <- args_raw[5]
+args$ribomin <- args_raw[6]
+args$ribomax <- args_raw[7]
+args$separator <- args_raw[8]
+args$genes_file <- args_raw[9]
+args$barcodes_file <- args_raw[10]
 
 # --- Input validation ---
 errors <- character(0)
@@ -89,17 +89,17 @@ docker_vals$scratch <- '/scratch'
 mounted_folders <- list()
 
 docker_vals$matrix_file <- args$matrix_file
-docker_vals$bootstrap_percentage <- args$bootstrap_percentage
-docker_vals$stability_threshold <- args$stability_threshold
-docker_vals$permutations <- args$permutations
+docker_vals$mitomin <- args$mitomin
+docker_vals$mitomax <- args$mitomax
+docker_vals$ribomin <- args$ribomin
+docker_vals$ribomax <- args$ribomax
 docker_vals$separator <- args$separator
 docker_vals$genes_file <- args$genes_file
 docker_vals$barcodes_file <- args$barcodes_file
-docker_vals$resolution <- args$resolution
 
 # --- Assemble docker command ---
 mount_str <- paste(mounts, collapse = ' ')
-cmd <- paste('docker run --rm', mount_str, 'repbioinfo/singlecelldownstream Rscript /home/clustering.R <matrix_file> <bootstrap_percentage> <stability_threshold> <permutations> <separator> <genes_file> <barcodes_file> <resolution>')
+cmd <- paste('docker run --rm', mount_str, 'repbioinfo/singlecelldownstream Rscript /home/mitoRiboFilter.R <matrix_file> <mitomin> <mitomax> <ribomin> <ribomax> <separator> <genes_file> <barcodes_file>')
 placeholders <- regmatches(cmd, gregexpr('<[^>]+>', cmd))[[1]]
 for (ph in placeholders) {
   key <- gsub('<|>', '', ph)
